@@ -13,8 +13,8 @@
     }
     textarea {
       width: 100%;
-      height: 200px;
-      font-size: 16px;
+      height: 300px;
+      font-size: 14px;
     }
     button {
       padding: 10px 20px;
@@ -30,7 +30,7 @@
       background: #fff;
       padding: 10px;
       border-radius: 5px;
-      font-size: 16px;
+      font-size: 14px;
       box-shadow: 0 0 4px rgba(0,0,0,0.1);
     }
   </style>
@@ -39,8 +39,114 @@
 
   <h2>🗣️ Pronunciation Practice Tool</h2>
 
-  <p>Enter words (one per line):</p>
-  <textarea id="wordPool" placeholder="e.g. banana&#10;elephant&#10;dolphin"></textarea><br>
+  <p>Click Start to begin practicing:</p>
+  <textarea id="wordPool">
+Java
+Spring Boot
+Spring MVC
+Spring Data JPA
+Hibernate
+Microservices
+Event-Driven Architecture
+RESTful APIs
+Apache Kafka
+Kafka Producer
+Kafka Consumer
+Kafka Topics
+Asynchronous Processing
+Multithreading
+Design Patterns
+OOP
+SOLID Principles
+Domain-Driven Design
+Spring Security
+JWT
+OAuth 2.0
+API Gateway
+Docker
+Jenkins
+GitLab CI/CD
+Git
+Maven
+Gradle
+Unit Testing
+JUnit
+Mockito
+Integration Testing
+Performance Tuning
+JMeter
+Load Testing
+Prometheus
+Grafana
+ELK Stack
+Logstash
+Elasticsearch
+Kibana
+AWS
+AWS EC2
+AWS S3
+AWS RDS
+AWS Lambda
+AWS CloudWatch
+AWS IAM
+AWS CLI
+AWS API Gateway
+Cloud Architecture
+CI/CD Pipelines
+DevOps
+Agile
+Scrum
+JIRA
+Confluence
+Postman
+Swagger
+OpenAPI
+IntelliJ IDEA
+SQL
+MySQL
+PostgreSQL
+MongoDB
+Redis
+Data Caching
+Database Indexing
+Observability
+Monitoring
+Alerting
+System Scalability
+System Design
+Backend Development
+Scalable Systems
+Distributed Systems
+Modular Architecture
+Code Review
+Clean Code
+Mentoring
+Team Collaboration
+Cross-functional Teams
+Software Development Life Cycle
+Bug Fixing
+Requirement Analysis
+Technical Documentation
+Customer-Facing APIs
+Business Logic
+Financial Services
+Loan Processing
+Digital Lending
+Real-Time Processing
+Personal Loans
+Two-Wheeler Loans
+Vehicle Finance
+Fintech
+Digital Platforms
+Product Engineering
+Backend APIs
+High Availability
+Resilient Systems
+System Optimization
+Logging
+Debugging
+Version Control
+  </textarea><br>
   <button onclick="startSession()">Start Practice</button>
   <p id="status"></p>
   <div id="results"></div>
@@ -50,78 +156,120 @@
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
-    recognition.continuous = false; // We'll manually restart
-  
-    function speakWord(word, callback) {
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.rate = 0.9;
-      utterance.onend = callback;
-      synth.speak(utterance);
-    }
-  
+    recognition.continuous = false;
+
+  function speakWord(word, callback) {
+    const spokenWord = fixTechPronunciation(word);
+    const utterance = new SpeechSynthesisUtterance(spokenWord);
+    utterance.rate = 0.9;
+    utterance.onend = callback;
+    synth.speak(utterance);
+  }
+
+function fixTechPronunciation(word) {
+  const replacements = {
+    'AWS': 'A W S',
+    'EC2': 'E C 2',
+    'RDS': 'R D S',
+    'IAM': 'I A M',
+    'CLI': 'C L I',
+    'JWT': 'J W T',
+    'JPA': 'J P A',
+    'API': 'A P I',
+    'CI/CD': 'C I slash C D',
+    'CD/CI': 'C D slash C I',
+    'IDE': 'I D E',
+    'HTML': 'H T M L',
+    'SQL': 'S Q L',
+    'OOP': 'O O P',
+    'MVC': 'M V C',
+    'S3': 'S 3',
+    'EC2/S3': 'E C 2 slash S 3',
+    'OAuth 2.0': 'O Auth two point zero'
+  };
+
+  let fixed = word;
+  for (const [original, spoken] of Object.entries(replacements)) {
+    const regex = new RegExp(original, 'gi');
+    fixed = fixed.replace(regex, spoken);
+  }
+  return fixed;
+}
+
+
     function recognizeOnce(callback) {
+      let didRespond = false;
+
       recognition.onresult = (event) => {
+        didRespond = true;
         const transcript = event.results[0][0].transcript;
-        callback(transcript);
+        callback({ success: true, transcript });
       };
-  
+
       recognition.onerror = (event) => {
-        callback(`(Recognition error: ${event.error})`);
+        if (!didRespond) {
+          callback({ success: false, error: event.error });
+        }
       };
-  
+
       recognition.onend = () => {
-        // We will manually restart next time; nothing to do here
+        if (!didRespond) {
+          callback({ success: false, error: 'no_speech' });
+        }
       };
-  
+
       recognition.start();
     }
-  
+
     function startSession() {
       const words = document.getElementById("wordPool").value
         .split('\n')
         .map(w => w.trim())
         .filter(Boolean);
-  
+
       const status = document.getElementById("status");
       const results = document.getElementById("results");
       results.innerHTML = "";
-  
+
       if (!words.length) {
         status.textContent = "Please enter some words.";
         return;
       }
-  
+
       let index = 0;
-  
+
       function nextWord() {
         if (index >= words.length) {
           status.textContent = "✅ Practice complete!";
           return;
         }
-  
+
         const word = words[index];
-        status.textContent = `🎧 Listening for: "${word}"`;
-  
+        status.textContent = `🎧 Speaking: "${word}"`;
+
         speakWord(word, () => {
-          setTimeout(() => {
-            status.textContent = `🎤 Please repeat: "${word}"`;
-            recognizeOnce((spoken) => {
-              const result = document.createElement("div");
-              result.className = "result";
-              result.innerHTML = `<strong>Word:</strong> ${word}<br><strong>You said:</strong> ${spoken}`;
-              results.appendChild(result);
-  
-              index++;
-              setTimeout(nextWord, 2000);
-            });
-          }, 500);
+          status.textContent = `🎤 Please repeat: "${word}"`;
+
+          recognizeOnce((result) => {
+            const div = document.createElement("div");
+            div.className = "result";
+
+            if (result.success) {
+              div.innerHTML = `<strong>Word:</strong> ${word}<br><strong>You said:</strong> ${result.transcript}`;
+            } else {
+              div.innerHTML = `<strong>Word:</strong> ${word}<br><span style="color: red;">❌ Skipped (no input or error)</span>`;
+            }
+
+            results.appendChild(div);
+            index++;
+            nextWord();
+          });
         });
       }
-  
+
       nextWord();
     }
   </script>
-  
 
 </body>
 </html>
